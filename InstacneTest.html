@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>title</title>
+ 
+    <script src="../three.js/build/three.js"></script>
+    <script src="../three.js/examples/js/controls/OrbitControls.js"></script>
+    <script src="../three.js/examples/js/libs/dat.gui.min.js"></script>
+    <script src="../three.js/examples/js/libs/stats.min.js"></script>
+    <script src="../three.js/examples/js/utils/BufferGeometryUtils.js"></script>
+</head>
+
+<body onload="draw()">
+    <script>
+    let scene,stats,camera;
+    var controls;
+    let renderer;
+    var geometries = [];//存放需要合并的geometry
+    let instanceBufferGeometry,circleBufferGeometry;
+    let instanceMesh;
+
+    var width = window.innerWidth; //窗口宽度
+    var height = window.innerHeight; //窗口高度
+
+    // draw();
+
+    /*绘制函数*/
+    function draw(){
+        var LastTime = Date.now();
+        init();
+        var now = Date.now();
+        var elapsed = now - LastTime;
+        console.log(elapsed);
+        animate();
+        window.onresize = onWindowResize;
+    }
+
+    /*初始化方法*/
+    function init(){
+        initRender();
+        initScene();
+        initCamera();
+        initLight();
+        initModel();
+        // InstanceGeometry(20);//场景中添加InstanceMesh
+        addInstanceMesh(198,8000);
+        initControls();
+        initStats();
+    }
+
+    function initScene(){
+        scene = new THREE.Scene();
+    }
+
+    var material = new THREE.MeshLambertMaterial({
+            color: 0xffff00, transparent: false, opacity: 1,side:THREE.DoubleSide
+    });
+
+
+    function addInstanceMesh(count,total){
+        let insGeometry = new THREE.CircleGeometry( 1, count);
+        // let insGeometry = new THREE.BoxGeometry( 1, 1,1);
+        //创建具有多个实例的实例化几何体
+        let insMesh = new THREE.InstancedMesh(insGeometry, material, total);
+        //修改位置
+        let transform = new THREE.Object3D();
+        for (let index = 0; index < total; index++) {
+            transform.position.set(-100+Math.random() * 200, -100+Math.random() * 200, -100+Math.random() * 200);
+            transform.scale.set(Math.random(), Math.random(), Math.random());
+            transform.rotateX(Math.random()*360);
+            transform.rotateY(Math.random()*360);
+            transform.rotateZ(Math.random()*360);
+            transform.updateMatrix();
+            //修改实例化几何体中的单个实例的矩阵以改变大小、方向、位置等
+            insMesh.setMatrixAt(index, transform.matrix);
+        }
+        scene.add(insMesh);
+    }
+    
+
+
+
+    function InstanceGeometry(count){
+        circleBufferGeometry = new THREE.CircleGeometry(50,count);
+        instanceBufferGeometry = new THREE.InstancedBufferGeometry();
+
+        console.log(instanceBufferGeometry);
+        instanceBufferGeometry.index = circleBufferGeometry.index;
+		instanceBufferGeometry.attributes.position = circleBufferGeometry.attributes.position;
+        console.log(instanceBufferGeometry);
+
+        // instanceMesh = new THREE.InstancedMesh(instanceBufferGeometry, material, 1);
+        // console.log(instanceMesh);
+        var mesh = new THREE.Mesh(circleBufferGeometry,material);
+        // scene.add(instanceMesh);
+        scene.add(mesh);
+
+    }
+   
+
+    
+    function initModel(){
+        var helper = new THREE.AxesHelper(50);
+        scene.add(helper);
+    }
+    
+    function initStats() {
+        stats = new Stats();
+        document.body.appendChild(stats.dom);
+    }
+
+
+    function initLight(){
+        var point = new THREE.PointLight(0xffffff);
+        point.position.set(400, 200, 300); 
+        scene.add(point); 
+        var ambient = new THREE.AmbientLight(0x444444);
+        scene.add(ambient);
+    }
+  
+    /*初始相机*/
+     function initCamera(){
+        var aspect = width / height; //窗口宽高比
+    
+        camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
+        camera.position.set(0, 40, 100);
+        camera.lookAt(new THREE.Vector3(0,0,0));
+
+     }
+  
+    /*初始化渲染器*/
+    function initRender(){
+        renderer = new THREE.WebGLRenderer({antialias:true});
+        renderer.setSize(width, height); 
+        renderer.setClearColor(0x000000, 1); 
+        document.body.appendChild(renderer.domElement); 
+    }
+    
+
+    // 渲染函数
+    function render() {
+      renderer.render(scene, camera); //执行渲染操作
+    }
+
+    /* 更新*/
+    function animate(){
+        stats.begin();
+        render();
+        stats.end();
+       // stats.update();//更新性能插件
+        controls.update();
+        stats.end();
+        requestAnimationFrame(animate);
+    }
+
+    //窗口变动触发的函数
+    function onWindowResize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        render();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+    }
+
+    /*初始化控制*/
+    function initControls(){
+        controls = new THREE.OrbitControls( camera,renderer.domElement );
+        controls.enableDamping = true;
+        controls.enableZoom = true;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
+        controls.minDistance  = 10;
+        controls.maxDistance  = 500;
+        controls.enablePan = true;
+        
+    }
+    
+  </script>
+</body>
+
+</html>
