@@ -80,26 +80,6 @@
     }
     
 
-
-
-    function InstanceGeometry(count){
-        circleBufferGeometry = new THREE.CircleGeometry(50,count);
-        instanceBufferGeometry = new THREE.InstancedBufferGeometry();
-
-        console.log(instanceBufferGeometry);
-        instanceBufferGeometry.index = circleBufferGeometry.index;
-		instanceBufferGeometry.attributes.position = circleBufferGeometry.attributes.position;
-        console.log(instanceBufferGeometry);
-
-        // instanceMesh = new THREE.InstancedMesh(instanceBufferGeometry, material, 1);
-        // console.log(instanceMesh);
-        var mesh = new THREE.Mesh(circleBufferGeometry,material);
-        // scene.add(instanceMesh);
-        scene.add(mesh);
-
-    }
-   
-
     
     function initModel(){
         var helper = new THREE.AxesHelper(50);
