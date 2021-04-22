@@ -7,7 +7,7 @@
  
   <script src="../three.js/build/three.js"></script>
   <script src="../three.js/examples/js/controls/OrbitControls.js"></script>
-  <script src="../three.js/examples/js/libs/dat.gui.min.js"></script>
+  <!-- <script src="../three.js/examples/js/libs/dat.gui.min.js"></script> -->
   <script src="../three.js/examples/js/libs/stats.min.js"></script>
   <script src="../three.js/examples/js/utils/BufferGeometryUtils.js"></script>
 </head>
@@ -19,6 +19,7 @@
     let renderer;
     var mergeMesh,mergeGeometry;
     var geometries = [];//存放需要合并的geometry
+    let firstGeometries = [];//存放new出来并未进行矩阵变换的geometry
 
     var width = window.innerWidth; //窗口宽度
     var height = window.innerHeight; //窗口高度
@@ -27,11 +28,7 @@
 
     /*绘制函数*/
     function draw(){
-        var LastTime = Date.now();
         init();
-        var now = Date.now();
-        var elapsed = now - LastTime;
-        console.log(elapsed);
         animate();
         window.onresize = onWindowResize;
     }
@@ -43,7 +40,8 @@
         initCamera();
         initLight();
         initModel();
-        mergeCube(198);//测试顶点数
+        //生成merge后的mesh 第一个参数为合并的geometries 第二个为（顶点数-2）
+        mergeCube(80000,198);//测试顶点数
         initControls();
         initStats();
     }
@@ -53,44 +51,46 @@
     }
    
     /*合并geometry*/
-    function mergeCube(count){
-        /*生成8000个geometry 放进geometries数组中*/
-        for(var i=0; i<8000; i++){
-            var cube = RandomCube(count);
-            if(cube){
-                geometries.push(cube);
-            }
+    function mergeCube(number,count){
+        createGeometry(number,count);//生成number数量，count+2顶点的 CircleBufferGeometry
+        //生成
+        let transform = new THREE.Object3D();
+        
+        // var LastTime = Date.now();
+        console.time('Merge方案生成时间');
+        for(let i=0;i<firstGeometries.length;i++){
+            transform.position.set(-100+Math.random() * 200, -100+Math.random() * 200, -100+Math.random() * 200);
+            transform.scale.set(Math.random(), Math.random(), Math.random());
+            transform.rotateX(Math.random()*360);
+            transform.rotateY(Math.random()*360);
+            transform.rotateZ(Math.random()*360);
+            transform.updateMatrix();
+            geometries.push(firstGeometries[i].applyMatrix4(transform.matrix));
         }
+
         var mergeGeometry = THREE.BufferGeometryUtils.mergeBufferGeometries(geometries);
         mergeMesh = new THREE.Mesh(mergeGeometry,material);
         scene.add(mergeMesh);
+        // var now = Date.now();
+        // var elapsed = now - LastTime;
+        // console.log("Merge方案生成时间： "+elapsed);
+         console.timeEnd('Merge方案生成时间');
     }
 
     var material = new THREE.MeshLambertMaterial({
-        color: 0x00ff00, transparent: true, opacity: 0.8,side:THREE.DoubleSide
+        color: 0x00ff00,side:THREE.DoubleSide
     });
 
-    /*生成不同位置大小cube*/
-    function RandomCube(count){
-        var cubeSize = 1.0;
-        // var cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-        // const cylinderGeometry = new THREE.CylinderGeometry( 5, 5, 10, 32 );
-        const circleGeometry = new THREE.CircleGeometry( 1, count );
-         let transform = new THREE.Object3D();
-
-        transform.position.set(-100+Math.random() * 200, -100+Math.random() * 200, -100+Math.random() * 200);
-        transform.scale.set(Math.random(), Math.random(), Math.random());
-        transform.rotateX(Math.random()*360);
-        transform.rotateY(Math.random()*360);
-        transform.rotateZ(Math.random()*360);
-        transform.updateMatrix();
-
-        // cubeGeometry.applyMatrix4(transform.matrix);
-        // return cubeGeometry;
-
-        circleGeometry.applyMatrix4(transform.matrix);
-        return circleGeometry;
-    }
+    
+    
+    //new number数量的geometry
+    function createGeometry(number,count){
+        for(let i=0;i<number;i++){
+            var circleGeometry = new THREE.CircleBufferGeometry( 1, count );
+            firstGeometries.push(circleGeometry);
+        }
+        
+    } 
 
     // /*自定义顶点BufferGeometry*/
     // function addBufferGeometry(){
@@ -126,9 +126,9 @@
 
 
     function initLight(){
-        var point = new THREE.PointLight(0xffffff);
-        point.position.set(400, 200, 300); 
-        scene.add(point); 
+        // var point = new THREE.PointLight(0xffffff);
+        // point.position.set(400, 200, 300); 
+        // scene.add(point); 
         var ambient = new THREE.AmbientLight(0x444444);
         scene.add(ambient);
     }
@@ -138,14 +138,14 @@
         var aspect = width / height; //窗口宽高比
     
         camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
-        camera.position.set(0, 40, 100);
+        camera.position.set(0, 400, 800);
         camera.lookAt(new THREE.Vector3(0,0,0));
 
      }
   
     /*初始化渲染器*/
     function initRender(){
-        renderer = new THREE.WebGLRenderer({antialias:true});
+        renderer = new THREE.WebGLRenderer({antialias:false});
         renderer.setSize(width, height); 
         renderer.setClearColor(0x000000, 1); 
         document.body.appendChild(renderer.domElement); 
@@ -159,12 +159,11 @@
 
     /* 更新*/
     function animate(){
-        stats.begin();
+        // stats.begin();
         render();
-        stats.end();
-       // stats.update();//更新性能插件
+       stats.update();//更新性能插件
         controls.update();
-        stats.end();
+        // stats.end();
         requestAnimationFrame(animate);
     }
 

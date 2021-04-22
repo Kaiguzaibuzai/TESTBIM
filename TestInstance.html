@@ -28,11 +28,7 @@
 
     /*绘制函数*/
     function draw(){
-        var LastTime = Date.now();
         init();
-        var now = Date.now();
-        var elapsed = now - LastTime;
-        console.log(elapsed);
         animate();
         window.onresize = onWindowResize;
     }
@@ -44,8 +40,8 @@
         initCamera();
         initLight();
         initModel();
-        // InstanceGeometry(20);//场景中添加InstanceMesh
-        addInstanceMesh(198,8000);
+        //向场景中添加InstancedMesh 第一个参数为（顶点数-2），第二个为总共的geometries
+        addInstanceMesh(198,80000);
         initControls();
         initStats();
     }
@@ -55,17 +51,22 @@
     }
 
     var material = new THREE.MeshLambertMaterial({
-            color: 0xffff00, transparent: false, opacity: 1,side:THREE.DoubleSide
+            color: 0xffff00, side:THREE.DoubleSide
     });
 
 
     function addInstanceMesh(count,total){
-        let insGeometry = new THREE.CircleGeometry( 1, count);
+        let insGeometry = new THREE.CircleBufferGeometry( 1, count);
         // let insGeometry = new THREE.BoxGeometry( 1, 1,1);
         //创建具有多个实例的实例化几何体
         let insMesh = new THREE.InstancedMesh(insGeometry, material, total);
         //修改位置
         let transform = new THREE.Object3D();
+
+        //开始记录时间
+       // var LastTime = Date.now();
+        console.time('Instance方案加载时间');
+        //每个matrix随机初始
         for (let index = 0; index < total; index++) {
             transform.position.set(-100+Math.random() * 200, -100+Math.random() * 200, -100+Math.random() * 200);
             transform.scale.set(Math.random(), Math.random(), Math.random());
@@ -77,15 +78,19 @@
             insMesh.setMatrixAt(index, transform.matrix);
         }
         scene.add(insMesh);
+        //var now = Date.now();
+        //var elapsed = now - LastTime;
+        console.timeEnd('Instance方案加载时间');
+        //console.log("Instance方案加载时间： "+elapsed);
     }
     
 
-    
+    //设置辅助坐标轴
     function initModel(){
         var helper = new THREE.AxesHelper(50);
         scene.add(helper);
     }
-    
+    //初始化性能插件
     function initStats() {
         stats = new Stats();
         document.body.appendChild(stats.dom);
@@ -93,9 +98,9 @@
 
 
     function initLight(){
-        var point = new THREE.PointLight(0xffffff);
-        point.position.set(400, 200, 300); 
-        scene.add(point); 
+        // var point = new THREE.PointLight(0xffffff);
+        // point.position.set(400, 200, 300); 
+        // scene.add(point); 
         var ambient = new THREE.AmbientLight(0x444444);
         scene.add(ambient);
     }
@@ -105,14 +110,15 @@
         var aspect = width / height; //窗口宽高比
     
         camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
-        camera.position.set(0, 40, 100);
-        camera.lookAt(new THREE.Vector3(0,0,0));
+        camera.position.set(0, 400, 1000);
+        // camera.lookAt(new THREE.Vector3(0,0,0));
+        camera.lookAt(scene.position); //设置相机方向(指向的场景对象)
 
      }
   
     /*初始化渲染器*/
     function initRender(){
-        renderer = new THREE.WebGLRenderer({antialias:true});
+        renderer = new THREE.WebGLRenderer({antialias:false});
         renderer.setSize(width, height); 
         renderer.setClearColor(0x000000, 1); 
         document.body.appendChild(renderer.domElement); 
@@ -126,12 +132,11 @@
 
     /* 更新*/
     function animate(){
-        stats.begin();
+        // stats.begin();
         render();
-        stats.end();
-       // stats.update();//更新性能插件
+       stats.update();//更新性能插件
         controls.update();
-        stats.end();
+        // stats.end();
         requestAnimationFrame(animate);
     }
 
