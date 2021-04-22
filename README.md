@@ -27,3 +27,5 @@
 |      Instance         |  10  | 11 | 11 | 11 | 11 | 11 |
 
 ![](C:\Users\UINO\Desktop\threejs\MergeTest\IMG_3792.JPG)
+
+![](https://github.com/Kaiguzaibuzai/TESTBIM/blob/main/IMG_3792.JPG)
